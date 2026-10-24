@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Ajustes
+# Settings
 
 **Ajustes** (⌘,) tiene las preferencias generales de Trading Hub. Cada cambio se guarda al momento. Lo que es de cada
 conexión está en [Conexiones](conexiones.md), lo de cada gráfico en [Gráficos](graficos.md), el stop y los objetivos de

@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Indicadores
+# Indicators
 
 Los indicadores del gráfico se agregan desde la ventana **Indicadores** (botón **Indicadores** de la barra del gráfico,
 o **Gráfico → Indicadores…**, ⌘I). A la izquierda está la **Biblioteca**, con un buscador por nombre o categoría;
@@ -27,7 +27,7 @@ Los indicadores de las estrategias (`Sma`, `Ema`, `Rsi`…) son otra API, más s
 
 Vienen en el proyecto `TradingHub.Indicators.Native` y en la biblioteca aparecen agrupados por categoría.
 
-### Indicadores técnicos
+### Indicators técnicos
 
 El proyecto `TradingHub.Indicators.Technical` está pensado para la colección de indicadores técnicos de ATAS (unos
 250). Su código es público pero no tiene una licencia abierta, así que **no se publica** en este repositorio: el proyecto
@@ -35,7 +35,7 @@ solo trae lo mínimo para compilarlos (los tipos de editores que usan). Los sum�
 [Sumar los indicadores de ATAS](#sumar-los-indicadores-de-atas), y Trading Hub los carga solo: aparecen en la
 biblioteca con los demás, por categoría.
 
-## Indicadores propios
+## Indicators propios
 
 Escribís los tuyos en C# y Trading Hub los compila solo.
 

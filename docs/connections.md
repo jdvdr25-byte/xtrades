@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Conexiones
+# Connections
 
 En **Conexiones** (⌘4) configurás de dónde salen los datos de mercado y con qué cuentas operás. A la izquierda está la
 lista de conexiones; a la derecha, el detalle de la que elegiste.

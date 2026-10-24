@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Gráficos
+# Charts
 
 Todo esto pasa en la sección **Trading** (⌘1). Cada gráfico tiene su barra de dibujos a la izquierda y su Chart
 Trader a la derecha; la barra de arriba actúa sobre el gráfico activo (el último en el que hiciste clic).

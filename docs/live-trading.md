@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# En vivo
+# Live trading
 
 La sección **En vivo** (⌘7) junta todas las estrategias que corren en tiempo real, se hayan lanzado desde acá, desde
 Backtesting o desde un gráfico. Tiene las pestañas **Estrategias**, **Mercado**, **Portafolios**, **Operaciones** y

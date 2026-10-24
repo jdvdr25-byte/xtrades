@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Estrategias en C#
+# Strategies en C#
 
 Una estrategia de Trading Hub es una clase de C# que hereda de `Strategy`. La misma clase, sin cambios, corre en el
 backtest, en la optimización y el walk-forward, puesta en un gráfico y en vivo en una cuenta. Acá está la API completa

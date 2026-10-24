@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Privacidad y seguridad
+# Privacy y seguridad
 
 Trading Hub corre entero en tu Mac: la app, tus datos, tus estrategias, los backtests y las claves de tus conexiones.
 No tiene servidores propios, no pide crear una cuenta y no manda telemetría ni estadísticas de uso. Solo se conecta a lo

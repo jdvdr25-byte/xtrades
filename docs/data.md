@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Datos
+# Data
 
 La sección **Datos** (⌘3) muestra la historia guardada en tu Mac. Esa historia se usa al abrir gráficos (carga al
 instante), en el replay y en los backtests.

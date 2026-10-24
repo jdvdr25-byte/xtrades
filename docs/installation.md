@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Instalación
+# Installation
 
 Trading Hub se compila en tu propia Mac a partir del código del repositorio. Un script arma la app «Trading Hub.app»,
 la firma y la copia a Aplicaciones. La primera vez tarda unos minutos porque baja los paquetes que necesita.

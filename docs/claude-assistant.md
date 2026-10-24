@@ -1,4 +1,4 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
 # Claude en Trading Hub
 

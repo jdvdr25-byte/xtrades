@@ -1,6 +1,6 @@
-[← Volver al índice](README.md)
+﻿[← Back to index](README.md)
 
-# Operar
+# Trading
 
 Se opera desde la sección **Trading**: con el Chart Trader, con el DOM, desde el gráfico o con atajos de teclado. Cada
 gráfico opera con la cuenta que le elijas; de entrada es la **Cuenta simulada**.
@@ -60,7 +60,7 @@ El resultado y la posición se muestran debajo de los botones, así sus cambios 
 
 El stop loss y los objetivos solo pueden reducir la posición, nunca darla vuelta.
 
-## Operar con el DOM
+## Trading con el DOM
 
 | Acción | Resultado |
 |---|---|
@@ -76,7 +76,7 @@ manda órdenes (cancelar sigue funcionando con un clic). El ícono del signo de 
 Debajo del DOM están los **botones de ejecución** (se muestran u ocultan desde su encabezado): cantidad con botones
 rápidos, Comprar MKT, Vender MKT, C. Bid, C. Ask, V. Bid, V. Ask, Cancelar, Revertir y Cerrar. Operan el gráfico activo.
 
-## Operar desde el gráfico
+## Trading desde el gráfico
 
 - **Clic derecho** en un precio: «Comprar límite» y «Vender stop» si está abajo del último precio, «Vender límite» y
   «Comprar stop» si está arriba, con la cantidad del Chart Trader. También «Cancelar todas las órdenes».
