@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
+using TradingHub.Data;
 using TradingHub.Rendering.Context;
 using TradingHub.Rendering.Tools;
 
@@ -15,9 +16,17 @@ public class SessionVolumeProfile : Indicator
 {
     public enum ProfilePeriod
     {
-        [Display(Name = "Sesión (día)")] Session,
+        [Display(Name = "Sesión (límite del feed)")] Session,
         [Display(Name = "Semana")] Week,
         [Display(Name = "Toda la historia visible")] Visible,
+        [Display(Name = "Sesión personalizada")] Custom,
+    }
+
+    public enum SessionTimezone
+    {
+        [Display(Name = "UTC")] Utc,
+        [Display(Name = "CT (Chicago, CME)")] Central,
+        [Display(Name = "ET (New York, NYSE)")] Eastern,
     }
 
     public enum ProfileKind
@@ -44,6 +53,10 @@ public class SessionVolumeProfile : Indicator
     private readonly List<Profile> _profiles = new();
     private ProfilePeriod _period = ProfilePeriod.Session;
     private int _valueArea = 70;
+    private int _customHour = 8;
+    private int _customMinute = 30;
+    private SessionTimezone _customTimezone = SessionTimezone.Central;
+    private SessionSettings? _customSettings;
 
     public SessionVolumeProfile() : base(true)
     {
@@ -55,7 +68,30 @@ public class SessionVolumeProfile : Indicator
     }
 
     [Display(Name = "Período", GroupName = "Cálculo", Order = 10)]
-    public ProfilePeriod Period { get => _period; set { _period = value; RecalculateValues(); } }
+    public ProfilePeriod Period { get => _period; set { _period = value; _customSettings = null; RecalculateValues(); } }
+
+    [Display(Name = "Hora de inicio (0–23)", GroupName = "Sesión personalizada", Order = 21)]
+    [Range(0, 23)]
+    public int CustomHour
+    {
+        get => _customHour;
+        set { _customHour = Math.Clamp(value, 0, 23); _customSettings = null; RecalculateValues(); }
+    }
+
+    [Display(Name = "Minuto de inicio (0–59)", GroupName = "Sesión personalizada", Order = 22)]
+    [Range(0, 59)]
+    public int CustomMinute
+    {
+        get => _customMinute;
+        set { _customMinute = Math.Clamp(value, 0, 59); _customSettings = null; RecalculateValues(); }
+    }
+
+    [Display(Name = "Zona horaria", GroupName = "Sesión personalizada", Order = 23)]
+    public SessionTimezone CustomTimezone
+    {
+        get => _customTimezone;
+        set { _customTimezone = value; _customSettings = null; RecalculateValues(); }
+    }
 
     [Display(Name = "Área de valor (%)", GroupName = "Cálculo", Order = 20)]
     [Range(10, 100)]
@@ -83,15 +119,20 @@ public class SessionVolumeProfile : Indicator
     [Display(Name = "Mostrar VAH / VAL", GroupName = "Visualización", Order = 90)]
     public bool ShowValueAreaLines { get; set; } = true;
 
-    protected override void OnRecalculate() => _profiles.Clear();
+    protected override void OnRecalculate()
+    {
+        _profiles.Clear();
+        _customSettings = null;
+    }
 
     protected override void OnCalculate(int bar, decimal value)
     {
         bool newProfile = bar == 0 || _profiles.Count == 0 || _period switch
         {
             ProfilePeriod.Session => IsNewSession(bar),
-            ProfilePeriod.Week => IsNewWeek(bar),
-            _ => false,
+            ProfilePeriod.Week    => IsNewWeek(bar),
+            ProfilePeriod.Custom  => IsNewCustomSession(bar),
+            _                     => false,
         };
 
         if (newProfile && (_profiles.Count == 0 || _profiles[^1].StartBar != bar))
@@ -110,6 +151,36 @@ public class SessionVolumeProfile : Indicator
         p.Levels = new SortedDictionary<decimal, (decimal Bid, decimal Ask)>(levels);
         p.EndBar = bar;
         Finish(p);
+    }
+
+    private SessionSettings GetCustomSettings()
+    {
+        if (_customSettings != null) return _customSettings;
+        TimeZoneInfo tz;
+        try
+        {
+            tz = _customTimezone switch
+            {
+                SessionTimezone.Central => TimeZoneInfo.FindSystemTimeZoneById(
+                    OperatingSystem.IsWindows() ? "Central Standard Time" : "America/Chicago"),
+                SessionTimezone.Eastern => TimeZoneInfo.FindSystemTimeZoneById(
+                    OperatingSystem.IsWindows() ? "Eastern Standard Time" : "America/New_York"),
+                _ => TimeZoneInfo.Utc,
+            };
+        }
+        catch
+        {
+            tz = TimeZoneInfo.Utc;
+        }
+        return _customSettings = new SessionSettings { TimeZone = tz, Start = new TimeSpan(_customHour, _customMinute, 0) };
+    }
+
+    private bool IsNewCustomSession(int bar)
+    {
+        if (bar == 0) return true;
+        var prev = GetCandle(bar - 1).Time;
+        var cur  = GetCandle(bar).Time;
+        return GetCustomSettings().IsNewSession(prev, cur);
     }
 
     private void AddTo(Dictionary<decimal, (decimal Bid, decimal Ask)> dict, int bar)
