@@ -100,7 +100,38 @@ public sealed class ClaudeCodeBridge
     private static IEnumerable<string> Candidates()
     {
         var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var list = new List<string>
+        if (OperatingSystem.IsWindows())
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var list = new List<string>
+            {
+                Path.Combine(home, ".local", "bin", "claude.cmd"),
+                Path.Combine(home, ".local", "bin", "claude.exe"),
+                Path.Combine(appData, "npm", "claude.cmd"),
+                Path.Combine(appData, "npm", "claude.exe"),
+                Path.Combine(localAppData, "Programs", "claude", "claude.exe"),
+                Path.Combine(localAppData, "Programs", "claude.exe"),
+            };
+            // bundled from the Claude desktop app on Windows
+            var bundledWin = Path.Combine(localAppData, "Programs", "Claude", "resources");
+            try
+            {
+                if (Directory.Exists(bundledWin))
+                    foreach (var d in Directory.GetDirectories(bundledWin, "claude-code*"))
+                        list.Add(Path.Combine(d, "claude.exe"));
+            }
+            catch { }
+            var pathSep = ';';
+            foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(pathSep, StringSplitOptions.RemoveEmptyEntries))
+            {
+                list.Add(Path.Combine(dir, "claude.cmd"));
+                list.Add(Path.Combine(dir, "claude.exe"));
+            }
+            return list;
+        }
+
+        var macList = new List<string>
         {
             "/usr/local/bin/claude",
             "/opt/homebrew/bin/claude",
@@ -109,22 +140,18 @@ public sealed class ClaudeCodeBridge
             Path.Combine(home, ".npm-global", "bin", "claude"),
         };
         foreach (var dir in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(':', StringSplitOptions.RemoveEmptyEntries))
-            list.Add(Path.Combine(dir, "claude"));
-        // la que trae la app de Claude (se actualiza sola): …/claude-code/2.1.295/<id>/claude.app/Contents/MacOS/claude
+            macList.Add(Path.Combine(dir, "claude"));
+        // bundled from the Claude app (auto-updated): …/claude-code/2.1.295/<id>/claude.app/Contents/MacOS/claude
         var bundled = Path.Combine(home, "Library", "Application Support", "Claude", "claude-code");
         try
         {
             if (Directory.Exists(bundled))
                 foreach (var v in Directory.GetDirectories(bundled))
                     foreach (var h in Directory.GetDirectories(v))
-                        list.Add(Path.Combine(h, "claude.app", "Contents", "MacOS", "claude"));
+                        macList.Add(Path.Combine(h, "claude.app", "Contents", "MacOS", "claude"));
         }
-        catch (Exception)
-        {
-            // sin permiso para mirar: se usan las otras
-        }
-
-        return list;
+        catch { }
+        return macList;
     }
 
     /// <summary>Versión de una CLI ("2.1.295 (Claude Code)" → 2.1.295), con caché por archivo.</summary>
@@ -171,12 +198,23 @@ public sealed class ClaudeCodeBridge
         }
     }
 
-    /// <summary>Abre la Terminal con Claude Code para iniciar sesión (/login) con la suscripción.</summary>
+    /// <summary>Opens a terminal with Claude Code for /login (connects to the user's subscription).</summary>
     public static void OpenLoginTerminal()
     {
         var cli = FindCli() ?? "claude";
         try
         {
+            if (OperatingSystem.IsWindows())
+            {
+                // Try Windows Terminal first, fall back to cmd.exe.
+                var wt = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Microsoft", "WindowsApps", "wt.exe");
+                if (File.Exists(wt))
+                    Process.Start(new ProcessStartInfo(wt, $"cmd /k \"{cli}\" /login") { UseShellExecute = false });
+                else
+                    Process.Start(new ProcessStartInfo("cmd.exe", $"/k \"{cli}\" /login") { UseShellExecute = false });
+                return;
+            }
+
             var psi = new ProcessStartInfo("/usr/bin/osascript") { UseShellExecute = false };
             psi.ArgumentList.Add("-e");
             psi.ArgumentList.Add($"tell application \"Terminal\" to do script \"'{cli}' /login\"");
@@ -184,10 +222,7 @@ public sealed class ClaudeCodeBridge
             psi.ArgumentList.Add("tell application \"Terminal\" to activate");
             Process.Start(psi);
         }
-        catch
-        {
-            // sin Terminal: el usuario puede escribir "claude" a mano
-        }
+        catch { }
     }
 
     internal static ProcessStartInfo Prepare(string cli, string workDir)
@@ -202,12 +237,22 @@ public sealed class ClaudeCodeBridge
             StandardOutputEncoding = Encoding.UTF8,
         };
 
-        // entorno limpio: que no herede credenciales temporales de otra sesión de Claude
+        // Clean env: don't inherit temporary credentials from another Claude session.
         foreach (var key in psi.Environment.Keys.ToList())
             if (key.StartsWith("CLAUDE", StringComparison.Ordinal) || key.StartsWith("ANTHROPIC", StringComparison.Ordinal))
                 psi.Environment.Remove(key);
-        psi.Environment["PATH"] = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:" + (Environment.GetEnvironmentVariable("PATH") ?? "");
-        psi.Environment["TERM"] = "dumb";
+        if (OperatingSystem.IsWindows())
+        {
+            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var extra = $"{Path.Combine(home, ".local", "bin")};{Path.Combine(appData, "npm")}";
+            psi.Environment["PATH"] = extra + ";" + (Environment.GetEnvironmentVariable("PATH") ?? "");
+        }
+        else
+        {
+            psi.Environment["PATH"] = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:" + (Environment.GetEnvironmentVariable("PATH") ?? "");
+            psi.Environment["TERM"] = "dumb";
+        }
         return psi;
     }
 

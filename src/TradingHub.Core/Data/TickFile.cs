@@ -51,7 +51,7 @@ public static class TickFile
             _instrument = instrument;
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             bool exists = File.Exists(path) && new FileInfo(path).Length > 0;
-            _fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.Read);
+            _fs = new FileStream(path, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
             _bs = new BufferedStream(_fs, 1 << 16);
             if (!exists)
             {
@@ -114,7 +114,7 @@ public static class TickFile
     {
         try
         {
-            using var fs = File.OpenRead(path);
+            using var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
             Span<byte> magic = stackalloc byte[4];
             if (fs.Read(magic) != 4 || !magic.SequenceEqual(Magic)) return null;
             int len = fs.ReadByte();

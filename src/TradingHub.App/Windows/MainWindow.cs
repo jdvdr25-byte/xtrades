@@ -62,13 +62,13 @@ public sealed class MainWindow : Window
         svc.Live.Notice += text => Dispatcher.UIThread.Post(() => SetStatus(text));
         _pageDefs = new List<Page>
         {
-            new("trading", "Trading", MaterialIconKind.ChartBoxOutline, () => Trading, new KeyGesture(Key.D1, KeyModifiers.Meta)),
-            new("accounts", "Cuenta", MaterialIconKind.WalletOutline, () => new AccountsView(svc, SetStatus, this), new KeyGesture(Key.D5, KeyModifiers.Meta)),
-            new("strategies", "Backtesting", MaterialIconKind.FlaskOutline, () => new StrategiesView(svc, SetStatus), new KeyGesture(Key.D2, KeyModifiers.Meta)),
-            new("live", "En vivo", MaterialIconKind.AccessPoint, () => new LiveView(svc, SetStatus, this), new KeyGesture(Key.D7, KeyModifiers.Meta)),
-            new("data", "Datos", MaterialIconKind.DatabaseOutline, () => new DataView(svc, SetStatus, this), new KeyGesture(Key.D3, KeyModifiers.Meta)),
-            new("connections", "Conexiones", MaterialIconKind.LanConnect, () => new ConnectionsView(svc, SetStatus), new KeyGesture(Key.D4, KeyModifiers.Meta)),
-            new("settings", "Ajustes", MaterialIconKind.CogOutline, () => new SettingsView(svc, SetStatus), new KeyGesture(Key.OemComma, KeyModifiers.Meta)),
+            new("trading", "Trading", MaterialIconKind.ChartBoxOutline, () => Trading, new KeyGesture(Key.D1, Keys.Command)),
+            new("accounts", "Cuenta", MaterialIconKind.WalletOutline, () => new AccountsView(svc, SetStatus, this), new KeyGesture(Key.D5, Keys.Command)),
+            new("strategies", "Backtesting", MaterialIconKind.FlaskOutline, () => new StrategiesView(svc, SetStatus), new KeyGesture(Key.D2, Keys.Command)),
+            new("live", "En vivo", MaterialIconKind.AccessPoint, () => new LiveView(svc, SetStatus, this), new KeyGesture(Key.D7, Keys.Command)),
+            new("data", "Datos", MaterialIconKind.DatabaseOutline, () => new DataView(svc, SetStatus, this), new KeyGesture(Key.D3, Keys.Command)),
+            new("connections", "Conexiones", MaterialIconKind.LanConnect, () => new ConnectionsView(svc, SetStatus), new KeyGesture(Key.D4, Keys.Command)),
+            new("settings", "Ajustes", MaterialIconKind.CogOutline, () => new SettingsView(svc, SetStatus), new KeyGesture(Key.OemComma, Keys.Command)),
         };
 
         Content = BuildLayout();
@@ -282,7 +282,7 @@ public sealed class MainWindow : Window
             Key.OemComma => ",",
             _ => g.Key.ToString(),
         };
-        return (g.KeyModifiers.HasFlag(KeyModifiers.Shift) ? "⇧" : "") + (g.KeyModifiers.HasFlag(KeyModifiers.Meta) ? "⌘" : "") + key;
+        return (g.KeyModifiers.HasFlag(KeyModifiers.Shift) ? "⇧" : "") + (g.KeyModifiers.HasFlag(KeyModifiers.Meta) ? "⌘" : g.KeyModifiers.HasFlag(KeyModifiers.Control) ? "Ctrl+" : "") + key;
     }
 
     private Control BuildStatusBar()
@@ -334,25 +334,25 @@ public sealed class MainWindow : Window
         {
             Navigate("trading");
             _ = Trading.NewChartAsync();
-        }, new KeyGesture(Key.T, KeyModifiers.Meta)));
-        file.Menu.Add(Item("Cerrar gráfico", Trading.CloseActiveTab, new KeyGesture(Key.W, KeyModifiers.Meta)));
+        }, new KeyGesture(Key.T, Keys.Command)));
+        file.Menu.Add(Item("Cerrar gráfico", Trading.CloseActiveTab, new KeyGesture(Key.W, Keys.Command)));
         file.Menu.Add(Item("Buscar instrumento…", () =>
         {
             Navigate("trading");
             Trading.Picker.Open();
-        }, new KeyGesture(Key.K, KeyModifiers.Meta)));
+        }, new KeyGesture(Key.K, Keys.Command)));
         file.Menu.Add(new NativeMenuItemSeparator());
         file.Menu.Add(Item("Guardar espacio de trabajo", () =>
         {
             Workspace.Save(Trading);
             SetStatus("Espacio de trabajo guardado");
-        }, new KeyGesture(Key.S, KeyModifiers.Meta)));
+        }, new KeyGesture(Key.S, Keys.Command)));
         file.Menu.Add(Item("Abrir carpeta de datos", () => Shell.OpenFolder(AppPaths.Root)));
         menu.Add(file);
 
         var chart = new NativeMenuItem("Gráfico") { Menu = new NativeMenu() };
-        chart.Menu.Add(Item("Indicadores…", Trading.OpenIndicators, new KeyGesture(Key.I, KeyModifiers.Meta)));
-        chart.Menu.Add(Item("Editar footprint…", Trading.OpenFootprintEditor, new KeyGesture(Key.F, KeyModifiers.Meta | KeyModifiers.Shift)));
+        chart.Menu.Add(Item("Indicadores…", Trading.OpenIndicators, new KeyGesture(Key.I, Keys.Command)));
+        chart.Menu.Add(Item("Editar footprint…", Trading.OpenFootprintEditor, new KeyGesture(Key.F, Keys.Command | KeyModifiers.Shift)));
         chart.Menu.Add(Item("Escala automática", () =>
         {
             if (Trading.ActiveTab?.Model is { } m)
@@ -360,7 +360,7 @@ public sealed class MainWindow : Window
                 m.Viewport.AutoScale = true;
                 m.Invalidate();
             }
-        }, new KeyGesture(Key.A, KeyModifiers.Meta | KeyModifiers.Alt)));
+        }, new KeyGesture(Key.A, Keys.Command | KeyModifiers.Alt)));
         chart.Menu.Add(Item("Ir al último precio", () =>
         {
             if (Trading.ActiveTab?.Model is { } m)
@@ -368,7 +368,7 @@ public sealed class MainWindow : Window
                 m.Viewport.ScrollBars = 0;
                 m.Invalidate();
             }
-        }, new KeyGesture(Key.End, KeyModifiers.Meta)));
+        }, new KeyGesture(Key.End, Keys.Command)));
         chart.Menu.Add(new NativeMenuItemSeparator());
         var layouts = new NativeMenuItem("Diseño") { Menu = new NativeMenu() };
         foreach (var (layout, label, _) in TradingView.Layouts)
@@ -382,7 +382,7 @@ public sealed class MainWindow : Window
         {
             Navigate("trading");
             Trading.DetachActive();
-        }, new KeyGesture(Key.D, KeyModifiers.Meta | KeyModifiers.Shift)));
+        }, new KeyGesture(Key.D, Keys.Command | KeyModifiers.Shift)));
         chart.Menu.Add(new NativeMenuItemSeparator());
         var panels = new NativeMenuItem("Paneles") { Menu = new NativeMenu() };
         foreach (var (key, label) in new[] { ("side", "Panel derecho"), ("ticket", "Ticket"), ("dom", "DOM"), ("tape", "Cinta de operaciones") })
@@ -400,7 +400,7 @@ public sealed class MainWindow : Window
         menu.Add(go);
 
         var code = new NativeMenuItem("Código") { Menu = new NativeMenu() };
-        code.Menu.Add(Item("Editor de indicadores…", () => new CodeEditorWindow(_svc, CodeKind.Indicator).Show(this), new KeyGesture(Key.E, KeyModifiers.Meta | KeyModifiers.Shift)));
+        code.Menu.Add(Item("Editor de indicadores…", () => new CodeEditorWindow(_svc, CodeKind.Indicator).Show(this), new KeyGesture(Key.E, Keys.Command | KeyModifiers.Shift)));
         code.Menu.Add(Item("Abrir carpeta de indicadores", () => Shell.OpenFolder(AppPaths.UserIndicators)));
         code.Menu.Add(Item("Recompilar indicadores", () => _svc.Scripts?.CompileAll()));
         code.Menu.Add(new NativeMenuItemSeparator());
@@ -580,7 +580,7 @@ internal interface IPage
     void OnTimer();
 }
 
-/// <summary>Utilidades para abrir carpetas y archivos con el sistema.</summary>
+/// <summary>Cross-platform helpers for opening folders, files, and URLs with the OS shell.</summary>
 internal static class Shell
 {
     public static void OpenFolder(string path)
@@ -588,54 +588,58 @@ internal static class Shell
         try
         {
             Directory.CreateDirectory(path);
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("open", $"\"{path}\"") { UseShellExecute = false });
+            if (OperatingSystem.IsWindows())
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(path) { UseShellExecute = true });
+            else
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("open", $"\"{path}\"") { UseShellExecute = false });
         }
-        catch
-        {
-            // ignorar
-        }
+        catch { }
     }
 
-    /// <summary>Abre una dirección web en el navegador.</summary>
+    /// <summary>Opens a URL in the default browser.</summary>
     public static void OpenUrl(string url)
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo("open") { UseShellExecute = false };
-            psi.ArgumentList.Add(url);
-            System.Diagnostics.Process.Start(psi);
+            if (OperatingSystem.IsWindows())
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+            else
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("open") { UseShellExecute = false };
+                psi.ArgumentList.Add(url);
+                System.Diagnostics.Process.Start(psi);
+            }
         }
-        catch
-        {
-            // ignorar
-        }
+        catch { }
     }
 
-    /// <summary>Muestra el archivo seleccionado en el Finder.</summary>
+    /// <summary>Shows a file selected in Explorer / Finder.</summary>
     public static void Reveal(string path)
     {
         try
         {
-            var psi = new System.Diagnostics.ProcessStartInfo("open") { UseShellExecute = false };
-            psi.ArgumentList.Add("-R");
-            psi.ArgumentList.Add(path);
-            System.Diagnostics.Process.Start(psi);
+            if (OperatingSystem.IsWindows())
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = false });
+            else
+            {
+                var psi = new System.Diagnostics.ProcessStartInfo("open") { UseShellExecute = false };
+                psi.ArgumentList.Add("-R");
+                psi.ArgumentList.Add(path);
+                System.Diagnostics.Process.Start(psi);
+            }
         }
-        catch
-        {
-            // ignorar
-        }
+        catch { }
     }
 
     public static void Open(string pathOrUrl)
     {
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("open", $"\"{pathOrUrl}\"") { UseShellExecute = false });
+            if (OperatingSystem.IsWindows())
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(pathOrUrl) { UseShellExecute = true });
+            else
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("open", $"\"{pathOrUrl}\"") { UseShellExecute = false });
         }
-        catch
-        {
-            // ignorar
-        }
+        catch { }
     }
 }

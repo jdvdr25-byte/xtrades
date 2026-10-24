@@ -1432,19 +1432,33 @@ public sealed partial class TradingView : UserControl
     }
 }
 
-/// <summary>Sonido de alerta del sistema.</summary>
+/// <summary>Alert sound playback (cross-platform).</summary>
 internal static class Sound
 {
+    [System.Runtime.InteropServices.DllImport("winmm.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern bool PlaySound(string pszSound, IntPtr hmod, uint fdwSound);
+    private const uint SND_ASYNC = 0x0001u;
+    private const uint SND_FILENAME = 0x00020000u;
+    private const uint SND_ALIAS = 0x00010000u;
+
     public static void Play(string file = "/System/Library/Sounds/Glass.aiff")
     {
         if (App.Services?.Settings.SoundAlerts == false) return;
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("afplay", file) { UseShellExecute = false });
+            if (OperatingSystem.IsWindows())
+            {
+                // Play WAV by path if provided, otherwise fall back to the system default alert sound.
+                if (file.EndsWith(".wav", StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(file))
+                    PlaySound(file, IntPtr.Zero, SND_ASYNC | SND_FILENAME);
+                else
+                    PlaySound("SystemDefault", IntPtr.Zero, SND_ASYNC | SND_ALIAS);
+            }
+            else
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("afplay", file) { UseShellExecute = false });
+            }
         }
-        catch
-        {
-            // sin sonido
-        }
+        catch { }
     }
 }

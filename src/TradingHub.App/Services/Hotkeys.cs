@@ -63,9 +63,9 @@ public static class Hotkeys
         {
             var g = KeyGesture.Parse(gesture);
             var parts = new List<string>();
-            if (g.KeyModifiers.HasFlag(KeyModifiers.Control)) parts.Add("⌃");
-            if (g.KeyModifiers.HasFlag(KeyModifiers.Alt)) parts.Add("⌥");
-            if (g.KeyModifiers.HasFlag(KeyModifiers.Shift)) parts.Add("⇧");
+            if (g.KeyModifiers.HasFlag(KeyModifiers.Control)) parts.Add(OperatingSystem.IsWindows() ? "Ctrl+" : "⌃");
+            if (g.KeyModifiers.HasFlag(KeyModifiers.Alt)) parts.Add(OperatingSystem.IsWindows() ? "Alt+" : "⌥");
+            if (g.KeyModifiers.HasFlag(KeyModifiers.Shift)) parts.Add(OperatingSystem.IsWindows() ? "Shift+" : "⇧");
             if (g.KeyModifiers.HasFlag(KeyModifiers.Meta)) parts.Add("⌘");
             string key = g.Key switch
             {

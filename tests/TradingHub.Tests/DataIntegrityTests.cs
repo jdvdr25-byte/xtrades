@@ -130,7 +130,8 @@ public class DataIntegrityTests
             using var first = TickFile.TryLock(dir, "binance-futures", "BTCUSDT");
             Assert.NotNull(first);
             Assert.Null(TickFile.TryLock(dir, "binance-futures", "BTCUSDT"));
-            Assert.NotNull(TickFile.TryLock(dir, "binance-futures", "ETHUSDT")); // otro instrumento sí
+            using var eth = TickFile.TryLock(dir, "binance-futures", "ETHUSDT"); // otro instrumento sí
+            Assert.NotNull(eth);
             first!.Dispose();
             using var again = TickFile.TryLock(dir, "binance-futures", "BTCUSDT");
             Assert.NotNull(again);

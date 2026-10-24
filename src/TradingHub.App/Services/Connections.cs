@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using TradingHub.Common.Logging;
@@ -14,8 +16,10 @@ using TradingHub.Trading;
 namespace TradingHub.App.Services;
 
 /// <summary>
-/// Guarda secretos (contraseñas, API secrets) en el llavero de macOS. Las herramientas de prueba ponen
-/// TRADINGHUB_KEYCHAIN_FILE y usan un archivo propio con datos de mentira: nunca leen el llavero real.
+/// Stores secrets (passwords, API keys) in the platform credential store:
+///   macOS  — Keychain via /usr/bin/security
+///   Windows — Windows Credential Manager via advapi32 CredWrite/CredRead/CredDelete
+/// Tests set TRADINGHUB_KEYCHAIN_FILE and use an isolated JSON file with fake data — never the real store.
 /// </summary>
 public static class Keychain
 {
@@ -34,16 +38,6 @@ public static class Keychain
         }
     }
 
-    private static string Run(params string[] args)
-    {
-        var psi = new ProcessStartInfo("/usr/bin/security") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
-        foreach (var a in args) psi.ArgumentList.Add(a);
-        using var p = Process.Start(psi)!;
-        string output = p.StandardOutput.ReadToEnd();
-        p.WaitForExit(5000);
-        return p.ExitCode == 0 ? output.TrimEnd('\n') : "";
-    }
-
     public static void Set(string account, string? secret)
     {
         if (IsolatedFile != null)
@@ -55,19 +49,111 @@ public static class Keychain
             return;
         }
 
-        if (string.IsNullOrEmpty(secret))
+        if (OperatingSystem.IsWindows())
         {
-            Run("delete-generic-password", "-s", Service, "-a", account);
+            WindowsCred.Set(Service + "/" + account, secret);
             return;
         }
 
-        Run("add-generic-password", "-U", "-s", Service, "-a", account, "-w", secret);
+        if (string.IsNullOrEmpty(secret))
+            MacSecurity("delete-generic-password", "-s", Service, "-a", account);
+        else
+            MacSecurity("add-generic-password", "-U", "-s", Service, "-a", account, "-w", secret);
     }
 
-    public static string Get(string account) =>
-        IsolatedFile != null
-            ? LoadIsolated().GetValueOrDefault(account, "")
-            : Run("find-generic-password", "-s", Service, "-a", account, "-w");
+    public static string Get(string account)
+    {
+        if (IsolatedFile != null) return LoadIsolated().GetValueOrDefault(account, "");
+        if (OperatingSystem.IsWindows()) return WindowsCred.Get(Service + "/" + account);
+        return MacSecurity("find-generic-password", "-s", Service, "-a", account, "-w");
+    }
+
+    private static string MacSecurity(params string[] args)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo("/usr/bin/security") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false };
+            foreach (var a in args) psi.ArgumentList.Add(a);
+            using var p = Process.Start(psi)!;
+            string output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit(5000);
+            return p.ExitCode == 0 ? output.TrimEnd('\n') : "";
+        }
+        catch { return ""; }
+    }
+
+    // ===================================================================== Windows Credential Manager
+
+    private static class WindowsCred
+    {
+        private enum CredType { Generic = 1 }
+        private enum CredPersist { LocalMachine = 2 }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct CREDENTIAL
+        {
+            public int Flags;
+            public CredType Type;
+            public string TargetName;
+            public string Comment;
+            public System.Runtime.InteropServices.ComTypes.FILETIME LastWritten;
+            public int CredentialBlobSize;
+            public IntPtr CredentialBlob;
+            public CredPersist Persist;
+            public int AttributeCount;
+            public IntPtr Attributes;
+            public string TargetAlias;
+            public string UserName;
+        }
+
+        [DllImport("advapi32.dll", EntryPoint = "CredWriteW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool CredWrite(ref CREDENTIAL cred, uint flags);
+
+        [DllImport("advapi32.dll", EntryPoint = "CredReadW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool CredRead(string target, CredType type, int reserved, out IntPtr credPtr);
+
+        [DllImport("advapi32.dll", EntryPoint = "CredFreeW", CharSet = CharSet.Unicode)]
+        private static extern void CredFree(IntPtr cred);
+
+        [DllImport("advapi32.dll", EntryPoint = "CredDeleteW", CharSet = CharSet.Unicode, SetLastError = true)]
+        private static extern bool CredDelete(string target, CredType type, int flags);
+
+        public static void Set(string target, string? secret)
+        {
+            if (string.IsNullOrEmpty(secret)) { CredDelete(target, CredType.Generic, 0); return; }
+            var blob = Encoding.UTF8.GetBytes(secret);
+            var handle = GCHandle.Alloc(blob, GCHandleType.Pinned);
+            try
+            {
+                var cred = new CREDENTIAL
+                {
+                    Type = CredType.Generic,
+                    TargetName = target,
+                    CredentialBlobSize = blob.Length,
+                    CredentialBlob = handle.AddrOfPinnedObject(),
+                    Persist = CredPersist.LocalMachine,
+                    UserName = Environment.UserName,
+                };
+                CredWrite(ref cred, 0);
+            }
+            finally { handle.Free(); }
+        }
+
+        public static string Get(string target)
+        {
+            if (!CredRead(target, CredType.Generic, 0, out var ptr)) return "";
+            try
+            {
+                var cred = Marshal.PtrToStructure<CREDENTIAL>(ptr);
+                if (cred.CredentialBlobSize <= 0) return "";
+                var bytes = new byte[cred.CredentialBlobSize];
+                Marshal.Copy(cred.CredentialBlob, bytes, 0, bytes.Length);
+                return Encoding.UTF8.GetString(bytes);
+            }
+            catch { return ""; }
+            finally { CredFree(ptr); }
+        }
+    }
 }
 
 public enum ConnectionKind

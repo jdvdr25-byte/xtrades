@@ -60,7 +60,7 @@ public sealed class InstrumentPicker : Button
         _list.DoubleTapped += (_, _) => PickSelected(newTab: false);
         _list.KeyDown += (_, e) =>
         {
-            if (e.Key == Key.Enter) PickSelected(e.KeyModifiers.HasFlag(KeyModifiers.Meta));
+            if (e.Key == Key.Enter) PickSelected(e.KeyModifiers.HasFlag(Keys.Command));
         };
         _search.TextChanged += (_, _) => Refill();
         _search.KeyDown += (_, e) =>
@@ -78,7 +78,7 @@ public sealed class InstrumentPicker : Button
                     e.Handled = true;
                     break;
                 case Key.Enter:
-                    PickSelected(e.KeyModifiers.HasFlag(KeyModifiers.Meta));
+                    PickSelected(e.KeyModifiers.HasFlag(Keys.Command));
                     e.Handled = true;
                     break;
             }

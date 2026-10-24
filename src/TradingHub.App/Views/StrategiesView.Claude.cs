@@ -77,7 +77,7 @@ internal sealed partial class StrategiesView
         _stopButton2.IsVisible = false;
         _prompt.KeyDown += (_, e) =>
         {
-            if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(KeyModifiers.Meta))
+            if (e.Key == Key.Enter && e.KeyModifiers.HasFlag(Keys.Command))
             {
                 _ = SendToClaudeAsync(_prompt.Text ?? "");
                 e.Handled = true;

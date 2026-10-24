@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Material.Icons;
@@ -45,7 +46,12 @@ internal static class Ui
     public static IBrush Warn => Brush("WarnBrush");
     public static IBrush Focus => Brush("FocusBrush");
 
-    /// <summary>Aplica una acción y devuelve el mismo objeto (para armar vistas en una expresión).</summary>
+    /// <summary>Monospace font stack for the current platform.</summary>
+    public static readonly FontFamily MonoFont = new(OperatingSystem.IsWindows()
+        ? "Cascadia Mono, Consolas, monospace"
+        : "Menlo, monospace");
+
+    /// <summary>Applies an action and returns the same object (for building views in one expression).</summary>
     public static T Also<T>(this T c, Action<T> a)
     {
         a(c);
@@ -267,4 +273,13 @@ internal static class Ui
         if (d.TotalHours < 24) return $"hace {(int)d.TotalHours} h";
         return $"hace {(int)d.TotalDays} días";
     }
+}
+
+/// <summary>
+/// Cross-platform keyboard modifier helper. Use Keys.Command instead of KeyModifiers.Meta so
+/// shortcuts map to Ctrl on Windows and ⌘ (Meta) on macOS.
+/// </summary>
+internal static class Keys
+{
+    public static KeyModifiers Command => OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
 }

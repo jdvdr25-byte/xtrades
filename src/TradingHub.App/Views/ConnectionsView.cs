@@ -743,7 +743,7 @@ internal sealed class ConnectionsView : UserControl, IPage
             Note(MaterialIconKind.InformationOutline, "Gratis con cualquier broker que tenga cTrader (IC Markets, Pepperstone, FxPro, Fusion Markets…) y una cuenta demo: CFDs de índices (US100/NAS100, US500, GER40…), forex, oro y petróleo, con historia tick a tick de años."),
             Ui.H3("1 · Tu aplicación (una sola vez)"),
             Note(MaterialIconKind.ShieldKeyOutline, "Creá una aplicación en openapi.ctrader.com (entrás con tu cTrader ID) y agregá esta dirección de redirección. Después copiá acá el Client ID y el Secret."),
-            Ui.H(8, new TextBlock { Text = redirect, FontFamily = new FontFamily("Menlo, monospace"), VerticalAlignment = VerticalAlignment.Center }, copy, Link("Abrir openapi.ctrader.com", "https://openapi.ctrader.com/apps")),
+            Ui.H(8, new TextBlock { Text = redirect, FontFamily = Ui.MonoFont, VerticalAlignment = VerticalAlignment.Center }, copy, Link("Abrir openapi.ctrader.com", "https://openapi.ctrader.com/apps")),
             TwoColumns(Ui.Field("Client ID", clientId), Ui.Field("Secret", secret)),
             Ui.H3("2 · Autorizar tu cuenta"),
             Ui.H(10, connect, demo),

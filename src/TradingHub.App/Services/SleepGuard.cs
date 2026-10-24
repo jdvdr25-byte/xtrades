@@ -87,14 +87,31 @@ internal sealed class SleepGuard : IDisposable
         else if (!lidClosed && LidHelperRunning) StopLidHelper();
     }
 
+    // ===================================================================== Windows
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+    private static extern uint SetThreadExecutionState(uint esFlags);
+    private const uint ES_CONTINUOUS = 0x80000000u;
+    private const uint ES_SYSTEM_REQUIRED = 0x00000001u;
+
+    // =====================================================================
+
     private void Hold(string reason)
     {
-        if (!OperatingSystem.IsMacOS()) return;
         if (Sandboxed)
         {
-            _held = true; // en pruebas: se simula
+            _held = true;
             return;
         }
+
+        if (OperatingSystem.IsWindows())
+        {
+            try { SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED); _held = true; }
+            catch (Exception ex) { CrashLog.Write(ex); }
+            return;
+        }
+
+        if (!OperatingSystem.IsMacOS()) return;
 
         IntPtr type = IntPtr.Zero, name = IntPtr.Zero;
         try
@@ -119,6 +136,14 @@ internal sealed class SleepGuard : IDisposable
         if (!_held) return;
         if (Sandboxed)
         {
+            _held = false;
+            return;
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            try { SetThreadExecutionState(ES_CONTINUOUS); }
+            catch (Exception ex) { CrashLog.Write(ex); }
             _held = false;
             return;
         }

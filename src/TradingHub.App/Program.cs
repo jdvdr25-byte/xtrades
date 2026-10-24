@@ -67,14 +67,18 @@ internal static class Program
         }
     }
 
-    public static AppBuilder BuildAvaloniaApp() =>
-        AppBuilder.Configure<App>()
+    public static AppBuilder BuildAvaloniaApp()
+    {
+        var builder = AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .WithInterFont()
-            .With(new MacOSPlatformOptions { ShowInDock = true })
-            // menús y desplegables dentro de la ventana: como ventanas aparte, a veces se perdía el primer clic
+            // Menus and dropdowns as separate windows: on some platforms the first click was lost otherwise.
             .With(new AvaloniaNativePlatformOptions { OverlayPopups = true })
             .LogToTrace();
+        if (OperatingSystem.IsMacOS())
+            builder = builder.With(new MacOSPlatformOptions { ShowInDock = true });
+        return builder;
+    }
 }
 
 /// <summary>Guarda los errores inesperados en crash.log, en la carpeta de datos de la app.</summary>

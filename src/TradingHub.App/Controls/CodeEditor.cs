@@ -60,12 +60,12 @@ public sealed class CodeEditor : UserControl
         };
         _editor.KeyDown += (_, e) =>
         {
-            if (e.KeyModifiers.HasFlag(KeyModifiers.Meta) && e.Key == Key.S)
+            if (e.KeyModifiers.HasFlag(Keys.Command) && e.Key == Key.S)
             {
                 SaveRequested?.Invoke();
                 e.Handled = true;
             }
-            else if (e.KeyModifiers.HasFlag(KeyModifiers.Meta) && e.Key == Key.B)
+            else if (e.KeyModifiers.HasFlag(Keys.Command) && e.Key == Key.B)
             {
                 CompileRequested?.Invoke();
                 e.Handled = true;
